@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rooftop Solar — Household Investment Case</title>
+<meta name="description" content="Interactive rooftop solar payback calculator for an Indian household. Illustrative model prepared by Team BI5813 (The Prime Apes) for the V-Guard Big Idea Competition 2026. Not an official V-Guard product.">
+<meta name="robots" content="noindex">
+<style>
+:root{
+  color-scheme: light;
+  --org:#F89919; --deep:#B45F06; --gold:#F5BD28;
+  --char:#1A1A1A; --grey:#6E6E6E; --lgrey:#DCDCDC;
+  --tint:#FDF3E6; --panel:#F7F7F7; --white:#fff;
+  --ok:#1F7A3D; --bad:#A62B1F;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:'Segoe UI',Inter,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--white);color:var(--char);font-size:13px;-webkit-font-smoothing:antialiased}
+.frame{display:flex;flex-direction:column;min-height:100vh}
+
+header{display:flex;align-items:center;gap:16px;padding:11px 22px;border-bottom:2px solid var(--char);flex-wrap:wrap}
+.mark{font-family:var(--serif);font-weight:700;font-size:21px;letter-spacing:-.4px;white-space:nowrap}
+.mark .v{color:var(--org)}
+.mark:after{content:"";display:inline-block;width:1px;height:20px;background:var(--lgrey);margin:0 0 -3px 16px}
+h1{font-family:var(--serif);font-size:15.5px;font-weight:700}
+h1 span{display:block;font-family:var(--sans);font-size:10.5px;font-weight:400;color:var(--grey);margin-top:1px}
+.spacer{flex:1}
+.stamp{font-size:9.5px;color:var(--grey);text-align:right;line-height:1.45;max-width:230px}
+
+.grid{flex:1;display:grid;grid-template-columns:258px minmax(0,1fr) 320px}
+.col{padding:15px 17px;min-width:0}
+.col.left{background:var(--panel);border-right:1px solid var(--lgrey)}
+.col.right{border-left:1px solid var(--lgrey)}
+.lbl{font-size:9.5px;font-weight:700;letter-spacing:1.1px;color:var(--grey);text-transform:uppercase;margin-bottom:8px}
+.lbl.mt{margin-top:16px}
+
+.fld{margin-bottom:10px}
+.fld label{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;margin-bottom:3px}
+.fld label b{font-family:var(--serif);font-size:13px;color:var(--deep)}
+.fld input[type=range]{width:100%;accent-color:var(--org);height:16px;cursor:pointer}
+.fld select{width:100%;padding:5px 7px;border:1px solid var(--lgrey);border-radius:3px;font-size:11.5px;background:var(--white);color:var(--char)}
+.fld select:focus{outline:2px solid var(--org);outline-offset:-1px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.hint{font-size:9.5px;color:var(--grey);margin-top:2px;line-height:1.45}
+
+.seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.seg button{padding:7px 2px;border:1px solid var(--lgrey);background:var(--white);border-radius:3px;cursor:pointer;
+  font-size:9.5px;font-weight:700;color:var(--grey);line-height:1.25;font-family:var(--sans)}
+.seg button:hover{border-color:var(--org)}
+.seg button.on{background:var(--org);border-color:var(--org);color:#fff}
+
+.bill{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:11px;
+  background:var(--tint);border-radius:5px;padding:12px 15px;margin-bottom:12px}
+.bill .cell{text-align:center}
+.bill .k{font-size:9.5px;font-weight:700;letter-spacing:.9px;color:var(--deep);text-transform:uppercase}
+.bill .v{font-family:var(--serif);font-size:26px;font-weight:700;line-height:1.15;margin-top:2px}
+.bill .s{font-size:9.5px;color:var(--grey);margin-top:1px}
+.arrow{font-size:18px;color:var(--deep);font-weight:700}
+.sep{width:1px;height:42px;background:#E6D8C4}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+.kpi{border:1px solid var(--lgrey);border-radius:5px;padding:8px 10px;border-top:3px solid var(--org)}
+.kpi .k{font-size:9px;font-weight:700;letter-spacing:.7px;color:var(--grey);text-transform:uppercase;line-height:1.3;min-height:23px}
+.kpi .v{font-family:var(--serif);font-size:21px;font-weight:700;color:var(--deep);line-height:1.1;margin-top:2px}
+.kpi .s{font-size:9px;color:var(--grey);margin-top:2px;line-height:1.35}
+
+.chartwrap{border:1px solid var(--lgrey);border-radius:5px;padding:9px 11px 4px}
+.chartwrap .ttl{font-size:9.5px;font-weight:700;letter-spacing:1px;color:var(--grey);text-transform:uppercase;margin-bottom:4px}
+.cbox{position:relative;height:178px}
+canvas{width:100%;height:100%;display:block}
+
+.capex{display:grid;grid-template-columns:repeat(4,1fr);margin-top:11px;border:1px solid var(--lgrey);border-radius:5px;overflow:hidden}
+.capex div{padding:7px 10px;border-right:1px solid var(--lgrey)}
+.capex div:last-child{border-right:0;background:var(--tint)}
+.capex .k{font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--grey);text-transform:uppercase}
+.capex .v{font-family:var(--serif);font-size:15px;font-weight:700;margin-top:2px}
+
+table{width:100%;border-collapse:collapse}
+th,td{text-align:right;padding:6px 4px;font-size:10.5px;border-bottom:1px solid #EDEDED}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:8.5px;font-weight:700;letter-spacing:.5px;color:var(--grey);text-transform:uppercase;
+  border-bottom:1px solid var(--char);line-height:1.3;padding-bottom:5px;vertical-align:bottom}
+tbody td:first-child{font-weight:600}
+td.num{font-family:var(--serif);font-size:12px}
+tr.sel td{background:var(--tint)}
+tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--org)}
+.mini{font-size:9px;color:var(--grey);font-weight:400;display:block;margin-top:1px}
+
+.verdict{margin-top:11px;border-radius:5px;padding:11px 12px;font-size:11px;line-height:1.55;border:1px solid var(--lgrey);background:var(--panel)}
+.verdict b.h{font-family:var(--serif);display:block;font-size:12.5px;margin-bottom:4px;color:var(--deep)}
+.verdict.win{background:var(--tint);border-color:var(--gold)}
+.big{font-family:var(--serif);font-size:15px;color:var(--deep)}
+
+details{margin-top:11px;border-top:1px solid var(--lgrey);padding-top:8px}
+summary{font-size:9.5px;font-weight:700;letter-spacing:1px;color:var(--grey);text-transform:uppercase;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"+ ";color:var(--org)}
+details[open] summary:before{content:"– "}
+.asm{font-size:9.5px;color:var(--grey);line-height:1.55;margin-top:6px}
+.asm div{padding:3px 0;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;gap:8px}
+.asm div span:last-child{text-align:right;color:var(--char)}
+footer{border-top:1px solid var(--lgrey);padding:7px 22px;font-size:9px;color:var(--grey);line-height:1.5}
+@media (max-width:1150px){
+  .grid{grid-template-columns:1fr}
+  .col.left,.col.right{border:0;border-top:1px solid var(--lgrey)}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+<header>
+  <div class="mark"><span class="v">V</span>-GUARD</div>
+  <h1>Rooftop Solar — Household Investment Case<span>The sale is arithmetic, not persuasion. Every figure below is computed from the inputs on the left.</span></h1>
+  <div class="spacer"></div>
+  <div class="stamp">Illustrative model for discussion — not an official V-Guard product.<br>Prepared by Team BI5813 · The Prime Apes.</div>
+</header>
+
+<div class="grid">
+
+  <div class="col left">
+    <div class="lbl">The household</div>
+    <div class="fld">
+      <label>Units used a month <b id="oU">400</b></label>
+      <input type="range" id="U" min="50" max="1000" step="10" value="400">
+      <div class="hint">80% of Indian households use under 300 units.</div>
+    </div>
+    <div class="fld">
+      <label>Their tariff, Rs a unit <b id="oT">7.50</b></label>
+      <input type="range" id="T" min="3" max="14" step="0.25" value="7.5">
+      <div class="hint" id="billNow"></div>
+    </div>
+
+    <div class="lbl mt">The system</div>
+    <div class="two">
+      <div class="fld">
+        <label>Panels <b id="oN">6</b></label>
+        <input type="range" id="N" min="2" max="24" step="1" value="6">
+      </div>
+      <div class="fld">
+        <label style="font-size:11px">Panel rating</label>
+        <select id="W"><option value="400">400 Wp</option><option value="450">450 Wp</option>
+        <option value="550" selected>550 Wp</option><option value="590">590 Wp</option></select>
+      </div>
+    </div>
+    <div class="hint" id="sysNote" style="margin-top:-3px"></div>
+
+    <div class="lbl mt">Where the roof is</div>
+    <div class="fld">
+      <select id="R">
+        <option value="0">Coastal / high rainfall — Kerala, coastal MH</option>
+        <option value="1" selected>Composite climate — national average</option>
+        <option value="2">Dry &amp; dusty — Rajasthan, Gujarat, NCR, UP</option>
+      </select>
+      <div class="hint" id="regNote"></div>
+    </div>
+    <div class="fld">
+      <label>Yield, kWh per kWp a year <b id="oY">1,500</b></label>
+      <input type="range" id="Y" min="1100" max="1800" step="25" value="1500">
+    </div>
+
+    <div class="lbl mt">Who cleans the roof</div>
+    <div class="seg" id="seg">
+      <button data-s="0" class="on">V-Guard<br>monthly</button>
+      <button data-s="1">Household<br>quarterly</button>
+      <button data-s="2">Nobody<br>rain only</button>
+    </div>
+    <div class="hint" id="soilNote" style="margin-top:6px"></div>
+
+    <div class="fld" style="margin-top:13px">
+      <label>Export credit, Rs a unit <b id="oE">3.30</b></label>
+      <input type="range" id="E" min="0" max="8" step="0.1" value="3.3">
+      <div class="hint">Surplus is banked and settled annually. Set 0 to test a state where it lapses.</div>
+    </div>
+    <div class="fld">
+      <label>Service contract, Rs a year <b id="oA">2,400</b></label>
+      <input type="range" id="A" min="0" max="6000" step="100" value="2400">
+      <div class="hint">Trade range is Rs 2,200–2,500. Only about 10% of systems renew one.</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="bill">
+      <div class="cell"><div class="k">Bill today</div><div class="v" id="b1">—</div><div class="s">a month</div></div>
+      <div class="arrow">&rarr;</div>
+      <div class="cell"><div class="k">Bill after solar</div><div class="v" id="b2" style="color:var(--deep)">—</div><div class="s" id="b2s">a month, year one</div></div>
+      <div class="sep"></div>
+      <div class="cell"><div class="k">Kept each year</div><div class="v" id="b3" style="color:var(--ok)">—</div><div class="s" id="b3s"></div></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k">Money in<br>after subsidy</div><div class="v" id="k1">—</div><div class="s" id="k1s"></div></div>
+      <div class="kpi"><div class="k">Breaks even<br>after</div><div class="v" id="k2">—</div><div class="s" id="k2s"></div></div>
+      <div class="kpi"><div class="k">Effective annual<br>return</div><div class="v" id="k3">—</div><div class="s">on the amount put in</div></div>
+      <div class="kpi"><div class="k">Net gain over<br>25 years</div><div class="v" id="k4">—</div><div class="s" id="k4s"></div></div>
+    </div>
+
+    <div class="chartwrap">
+      <div class="ttl">Cash position, year by year — the line crosses zero at break-even</div>
+      <div class="cbox"><canvas id="ch"></canvas></div>
+    </div>
+
+    <div class="capex">
+      <div><div class="k">System price</div><div class="v" id="c1">—</div></div>
+      <div><div class="k">PM Surya Ghar subsidy</div><div class="v" id="c2" style="color:var(--ok)">—</div></div>
+      <div><div class="k">Household pays</div><div class="v" id="c3">—</div></div>
+      <div><div class="k">Year-1 generation</div><div class="v" id="c4">—</div></div>
+    </div>
+  </div>
+
+  <div class="col right">
+    <div class="lbl">What cleaning is worth</div>
+    <table>
+      <thead><tr><th>Who cleans it</th><th>Dirt<span class="mini">lost</span></th><th>Units<span class="mini">year 1</span></th><th>25-yr<span class="mini">net</span></th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+    <div class="hint" style="margin-top:6px">25-year net is after the service contract, where one applies.</div>
+    <div class="verdict" id="verd"></div>
+    <details><summary>Assumptions and sources</summary><div class="asm" id="asm"></div></details>
+  </div>
+</div>
+
+<footer id="foot"></footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var PRICE_PER_KW=60000, DEGRADE=0.005, YEARS=25, CAP=0.25;
+var DAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+// heavy-rain events a month that actually reset a panel (>~10mm)
+var REG=[
+ {n:"Coastal / high rainfall", rate:0.0030, ev:[1,1,1,2,3,6,8,8,6,4,2,1]},
+ {n:"Composite climate",       rate:0.0043, ev:[0,0,0,1,1,4,7,7,4,2,0,0]},
+ {n:"Dry & dusty",             rate:0.0070, ev:[0,0,0,0,0,2,4,4,2,0,0,0]}
+];
+var INTERVAL=[30,90,0];
+var CLEANER=["V-Guard, monthly","Household, quarterly","Nobody — rain only"];
+var scen=0;
+var $=function(i){return document.getElementById(i);};
+
+function rs(n){
+  n=Math.round(n); var neg=n<0; n=Math.abs(n);
+  var s=String(n), l3=s.slice(-3), rest=s.slice(0,-3);
+  if(rest) l3=","+l3;
+  rest=rest.replace(/\B(?=(\d{2})+(?!\d))/g,",");
+  return (neg?"-Rs ":"Rs ")+rest+l3;
+}
+function num(n){return Math.round(n).toLocaleString("en-IN");}
+
+// average annual soiling loss: sawtooth, reset by heavy rain OR by a clean
+function soiling(ri,interval){
+  var r=REG[ri], tot=0, since=0, doy=0;
+  for(var m=0;m<12;m++){
+    var n=DAYS[m], ev=r.ev[m], rain={};
+    for(var i=0;i<ev;i++) rain[Math.round((i+1)*n/(ev+1))]=1;
+    for(var d=1;d<=n;d++){
+      doy++;
+      if(rain[d]||(interval&&doy%interval===0)) since=0; else since++;
+      tot+=Math.min(r.rate*since,CAP);
+    }
+  }
+  return tot/365;
+}
+function subsidyFor(kw){return Math.min(30000*Math.min(kw,2)+18000*Math.max(0,Math.min(kw,3)-2),78000);}
+
+function run(p,si){
+  var kw=p.N*p.W/1000, gross=kw*PRICE_PER_KW, sub=subsidyFor(kw), net=gross-sub;
+  var soil=soiling(p.R,INTERVAL[si]), amc=(si===0)?p.A:0;
+  var use=p.U*12, cum=-net, pay=null, f=[-net], rows=[], g1=0, s1=0;
+  for(var y=1;y<=YEARS;y++){
+    var gen=kw*p.Y*(1-soil)*(1-DEGRADE*(y-1));
+    var self=Math.min(gen,use), exp=Math.max(0,gen-use);
+    var ny=self*p.T+exp*p.E-amc;
+    if(y===1){g1=gen;s1=ny;}
+    var prev=cum; cum+=ny; f.push(ny); rows.push(cum);
+    if(pay===null&&cum>=0) pay=y-1+(ny?(-prev)/ny:0);
+  }
+  return {kw:kw,gross:gross,sub:sub,net:net,amc:amc,soil:soil,rows:rows,pay:pay,
+          total:cum,gen1:g1,save1:s1,roi:net>0?cum/net*100:0,irr:irr(f)};
+}
+function npv(f,r){var v=0;for(var i=0;i<f.length;i++)v+=f[i]/Math.pow(1+r,i);return v;}
+function irr(f){var lo=-0.95,hi=2;if(npv(f,lo)<0)return null;if(npv(f,hi)>0)return hi;
+  for(var i=0;i<160;i++){var m=(lo+hi)/2;if(npv(f,m)>0)lo=m;else hi=m;}return (lo+hi)/2;}
+
+// ---- plain-canvas chart, no external library ----
+function draw(r){
+  var c=$("ch"), box=c.parentNode, dpr=window.devicePixelRatio||1;
+  var W=box.clientWidth, H=box.clientHeight;
+  c.width=W*dpr; c.height=H*dpr;
+  var g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  var L=46,Rr=8,Tp=8,B=18, pw=W-L-Rr, ph=H-Tp-B;
+  var d=[-r.net]; for(var i=0;i<r.rows.length;i++) d.push(r.rows[i]);
+  var mx=Math.max.apply(null,d), mn=Math.min.apply(null,d);
+  var hi=Math.max(mx,0)*1.08, lo=Math.min(mn,0)*1.12; if(hi===lo) hi=lo+1;
+  var X=function(i){return L+pw*i/(d.length-1);}, Y=function(v){return Tp+ph*(hi-v)/(hi-lo);};
+
+  g.font="9px 'Segoe UI',Helvetica,Arial,sans-serif"; g.textBaseline="middle";
+  var steps=4;
+  for(var s=0;s<=steps;s++){
+    var v=lo+(hi-lo)*s/steps, y=Y(v);
+    g.strokeStyle="#F0F0F0"; g.lineWidth=1;
+    g.beginPath(); g.moveTo(L,y+.5); g.lineTo(W-Rr,y+.5); g.stroke();
+    g.fillStyle="#6E6E6E"; g.textAlign="right";
+    g.fillText((v<0?"-":"")+"Rs "+Math.round(Math.abs(v)/1000)+"k",L-6,y);
+  }
+  // fill under curve, split at zero
+  var y0=Y(0);
+  g.beginPath(); g.moveTo(X(0),Y(d[0]));
+  for(var i=1;i<d.length;i++) g.lineTo(X(i),Y(d[i]));
+  g.lineTo(X(d.length-1),y0); g.lineTo(X(0),y0); g.closePath();
+  g.fillStyle="rgba(248,153,25,.15)"; g.fill();
+  // zero line
+  g.strokeStyle="#1A1A1A"; g.lineWidth=1;
+  g.beginPath(); g.moveTo(L,y0+.5); g.lineTo(W-Rr,y0+.5); g.stroke();
+  // curve
+  g.beginPath(); g.moveTo(X(0),Y(d[0]));
+  for(var i=1;i<d.length;i++) g.lineTo(X(i),Y(d[i]));
+  g.strokeStyle="#B45F06"; g.lineWidth=2; g.lineJoin="round"; g.stroke();
+  // break-even marker
+  if(r.pay!==null&&r.pay<=YEARS){
+    var px=X(r.pay), py=y0;
+    g.beginPath(); g.arc(px,py,4.5,0,6.284);
+    g.fillStyle="#F89919"; g.fill(); g.strokeStyle="#fff"; g.lineWidth=1.5; g.stroke();
+    g.fillStyle="#B45F06"; g.textAlign=px>W-90?"right":"left"; g.font="bold 9.5px 'Segoe UI',Helvetica,Arial";
+    g.fillText("break-even "+r.pay.toFixed(1)+" yrs",px+(px>W-90?-8:8),py-11);
+  }
+  // x labels
+  g.fillStyle="#6E6E6E"; g.textAlign="center"; g.font="9px 'Segoe UI',Helvetica,Arial";
+  [0,5,10,15,20,25].forEach(function(y){ g.fillText(y===0?"now":"Y"+y, X(y), H-8); });
+}
+
+function go(){
+  var p={U:+$("U").value,T:+$("T").value,N:+$("N").value,W:+$("W").value,
+         Y:+$("Y").value,E:+$("E").value,A:+$("A").value,R:+$("R").value};
+  $("oU").textContent=num(p.U); $("oT").textContent=p.T.toFixed(2);
+  $("oN").textContent=p.N; $("oY").textContent=num(p.Y);
+  $("oE").textContent=p.E.toFixed(2); $("oA").textContent=num(p.A);
+  $("billNow").textContent="Bill today: "+rs(p.U*p.T)+" a month";
+  $("regNote").textContent="Dust settles at about "+(REG[p.R].rate*100).toFixed(2)+"% a day here, and heavy rain washes it off.";
+
+  var all=[run(p,0),run(p,1),run(p,2)], r=all[scen];
+  $("soilNote").textContent=CLEANER[scen]+" — "+(r.soil*100).toFixed(1)+"% of a year's generation lost to dirt.";
+
+  var fit=Math.round(p.U*12/(p.Y*(1-r.soil))*1000/p.W);
+  $("sysNote").innerHTML=p.N+" × "+p.W+" Wp = <b style='color:var(--deep)'>"+r.kw.toFixed(2)+" kW</b>"+
+    (p.N>fit?" — above this bill; the surplus earns the lower export rate."
+     :p.N<fit?" — under this bill, so every unit offsets at the full tariff. About "+fit+" panels would cover it."
+     :" — matched to this bill.");
+
+  var genM=r.gen1/12, self=Math.min(genM,p.U), exp=Math.max(0,genM-p.U), after=(p.U-self)*p.T-exp*p.E;
+  $("b1").textContent=rs(p.U*p.T);
+  $("b2").textContent=after<-0.5?rs(after):rs(Math.max(after,0));
+  $("b2s").textContent=after<-0.5?"a month — a credit, not a bill":"a month, year one";
+  $("b3").textContent=rs(r.save1);
+  $("b3s").textContent=r.amc>0?"after paying "+rs(r.amc)+" for cleaning":"no service contract";
+
+  $("k1").textContent=rs(r.net); $("k1s").textContent=rs(r.gross)+" less "+rs(r.sub);
+  $("k2").textContent=r.pay===null?"beyond 25 yrs":r.pay.toFixed(1)+" yrs";
+  $("k2s").textContent=r.pay===null?"does not recover":"of a 25-year asset life";
+  $("k3").textContent=r.irr===null?"—":(r.irr*100).toFixed(1)+"%";
+  $("k4").textContent=rs(r.total);
+  $("k4s").textContent=r.net>0?Math.round(r.roi)+"% of what was put in":"";
+  $("c1").textContent=rs(r.gross); $("c2").textContent="− "+rs(r.sub);
+  $("c3").textContent=rs(r.net); $("c4").textContent=num(r.gen1)+" units";
+
+  $("tb").innerHTML=all.map(function(x,i){
+    return '<tr class="'+(i===scen?"sel":"")+'"><td>'+CLEANER[i]+
+      (i===0?'<span class="mini">Rs '+num(p.A)+' a year</span>':'<span class="mini">free</span>')+
+      '</td><td class="num">'+(x.soil*100).toFixed(1)+'%</td><td class="num">'+num(x.gen1)+
+      '</td><td class="num">'+rs(x.total)+'</td></tr>';
+  }).join("");
+
+  // what the contract is worth, and the size above which it funds itself
+  var gain=all[0].soil===all[2].soil?0:(all[2].soil-all[0].soil);
+  var bekw=gain>0?p.A/(p.T*p.Y*gain):null;
+  var vNo=all[0].total-all[2].total, v=$("verd"), h="<b class='h'>What the service contract is worth</b>";
+  if(bekw!==null&&bekw>0){
+    h+="In this region, monthly cleaning recovers <b>"+(gain*100).toFixed(1)+" points</b> of generation. "+
+       "At Rs "+num(p.A)+" a year that contract funds itself on any system above <span class='big'>"+bekw.toFixed(1)+" kW</span>.<br><br>";
+    h+= p.N*p.W/1000>=bekw
+      ? "This one is "+r.kw.toFixed(2)+" kW, so it clears that bar — worth <b>"+rs(vNo)+"</b> over 25 years against a roof nobody cleans."
+      : "This one is "+r.kw.toFixed(2)+" kW, below that bar. Here the contract is sold on roof safety, warranty cover and fault detection — not on units. Over 25 years it is "+(vNo>=0?"worth "+rs(vNo):rs(-vNo)+" behind")+" on generation alone.";
+  } else {
+    h+="Rain washes this roof often enough that cleaning recovers almost nothing. Sell the contract here on safety, warranty and fault detection, not on units.";
+  }
+  h+="<br><br><span style='color:var(--grey)'>The realistic comparison is the bottom row: only about one system in ten carries a paid contract today.</span>";
+  v.innerHTML=h; v.className="verdict"+(bekw!==null&&r.kw>=bekw?" win":"");
+
+  $("asm").innerHTML=[
+    ["System price","Rs "+num(PRICE_PER_KW)+" / kW"],
+    ["Subsidy","Rs 30,000/kW to 2 kW, Rs 18,000 for the 3rd, capped Rs 78,000"],
+    ["Dust accumulation","0.30–0.70% a day by region, capped at 25%"],
+    ["Rain","Heavy rain resets a panel to near-zero soiling"],
+    ["Panel degradation","0.5% a year"],
+    ["Tariff escalation","0% — held flat on purpose"],
+    ["Horizon","25 years"]
+  ].map(function(a){return "<div><span>"+a[0]+"</span><span>"+a[1]+"</span></div>";}).join("")+
+  "<div style='display:block;border:0;padding-top:7px;line-height:1.55'>Soiling rates, the 0.43%/day mean and the rain-reset effect: "+
+  "rooftop PV field study in composite Indian climate, <i>Scientific Reports</i> 2025, with a Delhi 300-day trial (<i>Sādhanā</i>). "+
+  "Subsidy slabs: PM Surya Ghar, MNRE. Yield band: MNRE / NIWE. Export settlement: state net-metering rules. "+
+  "System price and the Rs 2,200–2,500 contract range: our own channel and trade research.</div>";
+
+  $("foot").textContent="Tariff held flat at Rs "+p.T.toFixed(2)+" for 25 years — no escalation assumed, so every figure here is a floor rather than a forecast. "+
+    "Subsidy is credited after DISCOM inspection and is not financed in this view. Generation varies with roof orientation, shading and local irradiance.";
+  draw(r);
+}
+
+["U","T","N","W","Y","E","A","R"].forEach(function(i){
+  $(i).addEventListener("input",go); $(i).addEventListener("change",go);
+});
+Array.prototype.forEach.call($("seg").children,function(b){
+  b.addEventListener("click",function(){
+    Array.prototype.forEach.call($("seg").children,function(x){x.classList.remove("on");});
+    b.classList.add("on"); scen=+b.dataset.s; go();
+  });
+});
+window.addEventListener("resize",go);
+go();
+})();
+</script>
+</body>
+</html>
